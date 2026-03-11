@@ -4,13 +4,39 @@ import schemas
 import api_helpers
 from hamcrest import assert_that, contains_string, is_
 
-'''
-TODO: Finish this test by...
-1) Creating a function to test the PATCH request /store/order/{order_id}
-2) *Optional* Consider using @pytest.fixture to create unique test data for each run
-2) *Optional* Consider creating an 'Order' model in schemas.py and validating it in the test
-3) Validate the response codes and values
-4) Validate the response message "Order and pet status updated successfully"
-'''
-def test_patch_order_by_id():
-    pass
+
+@pytest.fixture
+def created_order():
+    payload = {
+        "pet_id": 0
+    }
+
+    response = api_helpers.post_api_data("/store/order", payload)
+
+    assert response.status_code == 201
+
+    order_data = response.json()
+
+    return order_data["id"], payload["pet_id"]
+
+
+def test_patch_order_by_id(created_order):
+
+    order_id, pet_id = created_order
+
+    patch_payload = {
+        "status": "sold"
+    }
+
+    response = api_helpers.patch_api_data(f"/store/order/{order_id}", patch_payload)
+
+    assert response.status_code == 200
+
+    response_json = response.json()
+
+    assert response_json["message"] == "Order and pet status updated successfully"
+
+    pet_response = api_helpers.get_api_data(f"/pets/{pet_id}")
+
+    assert pet_response.status_code == 200
+    assert pet_response.json()["status"] == "sold"
